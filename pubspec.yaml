@@ -1,0 +1,21 @@
+name: liquid_glass
+description: A pure-Dart Flutter package that renders iOS 26-style liquid glass (refraction, edge highlights, blur and press/drag deformation) with a FragmentShader and BackdropFilter.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  shaders:
+    - shaders/liquid_glass.frag
