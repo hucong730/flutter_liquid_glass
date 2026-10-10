@@ -29,14 +29,17 @@ const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 
 const float kBaseHeightFactor = 1.5; // flat-slab base height = t * this
 const float kRefractScale = 0.5;     // tames Snell displacement to taste
-const float kWhiten = 0.12;          // luminance-gated whiten strength
-const float kMeniscus = 0.30;        // edge absorption strength
-const float kFresnel = 0.12;         // rim luminosity ramp strength
-const float kRimLobe = 0.5;          // directional specular lobe strength
+const float kMagnify = 0.06;         // interior lens magnification (UV pull to center)
+const float kWhiten = 0.08;          // luminance-gated whiten strength
+const float kBodyLift = 1.05;        // slight interior brightness gain
+const float kMeniscus = 0.12;        // wide soft edge absorption strength
+const float kEdgeLine = 0.5;         // thin bright edge line strength
+const float kEdgeLineWidth = 3.5;    // px falloff of the bright edge line
+const float kFresnel = 0.06;         // rim luminosity ramp strength
 const float kPressDepth = 10.0;      // SDF dent depth at full press
-const float kPressSigma = 45.0;      // gaussian radius of the press field
-const float kPressLens = 0.22;       // radial UV pull toward the touch point
-const float kPressDarken = 0.12;     // shading at the dent center
+const float kPressSigma = 30.0;      // gaussian radius of the press field
+const float kPressLens = 0.40;       // radial UV pull toward the touch point
+const float kPressDarken = 0.18;     // shading at the dent center
 const float kDragStretch = 0.25;     // drag offset -> shape stretch factor
 const float kDragLens = 0.35;        // interior content lag while dragging
 
@@ -142,6 +145,15 @@ void main() {
   float x = t + d;
   float height = x <= 0.0 ? t : sqrt(max(0.0, t * t - x * x));
 
+  // Pixels outside the (deformed) shape are fully transparent with a 1.5px
+  // anti-aliased edge. Without this, rim math (nCos == 1, huge lateral
+  // displacement) smears far-away content into dark notches at the corners.
+  float alpha = 1.0 - smoothstep(-0.75, 0.75, d);
+  if (alpha <= 0.002) {
+    fragColor = vec4(0.0);
+    return;
+  }
+
   // True Snell refraction with propagation distance through the slab.
   // Ported from liquid_glass_render.frag:379-403 (paraxial-lens branch and
   // DPR rescale dropped — single-shape pipeline, logical px).
@@ -159,6 +171,12 @@ void main() {
   }
   // Drag lag: the liquid interior trails the drag direction (existing).
   displacement -= uDragVelocity * kDragLens * (height / t);
+
+  // Interior magnification: pull samples slightly toward the component
+  // center so the content reads as gently magnified (iOS 26 lens look).
+  // Gated by height/t so it fades out across the bevel and meets the rim
+  // refraction smoothly.
+  displacement += (halfSize - fragCoord) * kMagnify * (height / t);
 
   // Clamp the reach so rim pixels never sample content far outside the
   // shape's own footprint (would smear distant bright text into the rim).
@@ -209,21 +227,28 @@ void main() {
   float satLuma = dot(color, LUMA);
   color = clamp(mix(vec3(satLuma), color, 1.06 * adaptive), 0.0, 1.0);
 
+  // Slight interior brightness gain so the glass body never reads darker
+  // than its surroundings.
+  color = clamp(color * kBodyLift, 0.0, 1.0);
+
   // Luminance-gated whiten: lifts bright content toward white, protects
   // darks. Ported from liquid_glass_render.frag:673-681 (strength is a
   // constant here, gate always on).
-  float whitenGate = smoothstep(0.40, 0.80, dot(color, LUMA));
+  float whitenGate = smoothstep(0.45, 0.85, dot(color, LUMA));
   color = mix(color, vec3(1.0), kWhiten * whitenGate);
 
   vec2 lightDir = normalize(uLightDirection);
 
   if (highlightOn && uHighlightIntensity > 0.001) {
+    float rimDist = max(-d, 0.0); // px inside from the shape edge
+    float litW = clamp(dot(gradN, lightDir) * 0.5 + 0.5, 0.0, 1.0);
+
     // Meniscus darkening: hemisphere thickness profile absorbs light at the
     // rim, modulated by direction — lit side 0.6x, shadow side 1.4x.
     // Ported from liquid_glass_render.frag:725-741 (rimThickness == nCos in
-    // this single-shape model: 1 at the rim, 0 on the flat face).
-    float litness = dot(gradN, lightDir);
-    float dirScale = mix(1.4, 0.6, litness * 0.5 + 0.5);
+    // this single-shape model: 1 at the rim, 0 on the flat face). Kept
+    // subtle so the edge reads as glass, not a bevelled picture frame.
+    float dirScale = mix(1.4, 0.6, litW);
     float absorption =
         1.0 - sqrt(nCos) * kMeniscus * dirScale * uHighlightIntensity;
     color *= max(absorption, 0.0);
@@ -233,10 +258,11 @@ void main() {
     // Simplified from liquid_glass_render.frag:834-869 (rimBase term only).
     color += vec3((1.0 - nSin) * nCos * kFresnel * uHighlightIntensity);
 
-    // Directional specular lobe along the light axis.
-    float lobe = clamp(dot(gradN, lightDir) * 0.5 + 0.5, 0.0, 1.0);
-    color += vec3(nCos * nCos * lobe * lobe * lobe * kRimLobe *
-                  uHighlightIntensity);
+    // Thin bright edge line hugging the shape outline, weighted toward the
+    // lit side. This is the crisp 1.5-3px highlight of iOS glass.
+    float line = 1.0 - smoothstep(0.5, kEdgeLineWidth, rimDist);
+    float lineLobe = 0.25 + 0.75 * litW * litW;
+    color += vec3(line * lineLobe * kEdgeLine * uHighlightIntensity);
 
     // Touch specular glint: a tight edge-aligned lobe (dot^6 via multiplies,
     // no pow) that lights only the rim nearest the touch point, with
@@ -255,10 +281,10 @@ void main() {
         float tSpec = rtd2 * rtd2 * rtd2 * distFactor; // dot^6
         float bright = tSpec * uPressAmount * uHighlightIntensity * 2.5;
         bright = bright / (1.0 + bright); // Reinhard compress
-        color += vec3(bright * nCos);
+        color += vec3(bright * max(nCos, line));
       }
     }
   }
 
-  fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+  fragColor = vec4(clamp(color, 0.0, 1.0) * alpha, alpha);
 }

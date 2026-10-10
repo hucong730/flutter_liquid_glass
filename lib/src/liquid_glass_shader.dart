@@ -65,6 +65,7 @@ abstract final class LiquidGlassShader {
     double refractiveIndex = 1.5,
     double chromaticAberration = 0.15,
     Offset lightDirection = defaultLightDirection,
+    double? thickness,
     Offset? touchPoint,
     double pressAmount = 0,
     Offset dragVelocity = Offset.zero,
@@ -101,7 +102,7 @@ abstract final class LiquidGlassShader {
     shader.setFloat(i++, dragVelocity.dx);
     shader.setFloat(i++, dragVelocity.dy);
     // uThickness — the bevel band width doubles as the hemisphere thickness.
-    shader.setFloat(i++, LiquidGlassGeometry.edgeWidth(size));
+    shader.setFloat(i++, thickness ?? LiquidGlassGeometry.edgeWidth(size));
     // uRefractiveIndex
     shader.setFloat(i++, refractiveIndex);
     // uChromaticAberration
