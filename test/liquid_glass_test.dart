@@ -74,6 +74,42 @@ void main() {
   });
 
   group('gesture -> controller', () {
+    testWidgets('controller notify marks LiquidGlass dirty and it rebuilds',
+        (tester) async {
+      final controller = LiquidGlassController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrap(LiquidGlass(controller: controller, child: const Text('g'))),
+      );
+      await tester.pump(); // let the async shader load settle
+
+      final element = tester.element(find.byType(LiquidGlass));
+      expect(element.dirty, isFalse);
+
+      // A controller change must synchronously schedule a rebuild so the new
+      // deformation uniforms reach the shader on the very next frame.
+      controller.press(const Offset(10, 10));
+      expect(element.dirty, isTrue);
+      await tester.pump();
+      expect(element.dirty, isFalse);
+
+      // Release: the spring keeps rebuilding the widget until it settles.
+      controller.release();
+      await tester.pump();
+      expect(element.dirty, isFalse);
+      for (var i = 0; i < 120 && controller.isAnimating; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(controller.pressAmount, 0.0);
+
+      // Idle: further frames produce no controller notifications.
+      var notifies = 0;
+      controller.addListener(() => notifies++);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(notifies, 0);
+    });
+
     testWidgets('press/move/release drives the provided controller',
         (tester) async {
       final controller = LiquidGlassController();
