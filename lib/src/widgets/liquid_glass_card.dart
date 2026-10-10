@@ -16,6 +16,8 @@ class LiquidGlassCard extends StatelessWidget {
     this.quality = LiquidGlassQuality.high,
     this.borderRadius = 20,
     this.shadow,
+    this.refractiveIndex,
+    this.chromaticAberration,
   });
 
   final Widget child;
@@ -26,6 +28,8 @@ class LiquidGlassCard extends StatelessWidget {
   final double? blurSigma;
   final LiquidGlassQuality quality;
   final double borderRadius;
+  final double? refractiveIndex;
+  final double? chromaticAberration;
 
   /// Optional drop shadow painted behind the glass.
   final List<BoxShadow>? shadow;
@@ -41,6 +45,8 @@ class LiquidGlassCard extends StatelessWidget {
       highlightIntensity: highlightIntensity,
       blurSigma: blurSigma,
       quality: quality,
+      refractiveIndex: refractiveIndex ?? 1.5,
+      chromaticAberration: chromaticAberration ?? 0.15,
       child: child,
     );
     final shadow = this.shadow;

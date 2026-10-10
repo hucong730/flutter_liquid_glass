@@ -10,7 +10,8 @@ abstract final class LiquidGlassGeometry {
   static const double maxEdgeWidth = 18.0;
   static const double edgeWidthFraction = 0.18;
 
-  /// Width of the refraction/highlight edge band in px.
+  /// Width of the bevel band in px. In the shader this doubles as the
+  /// hemisphere thickness `t` (uniform uThickness).
   static double edgeWidth(Size size) {
     final shortest = math.min(size.width, size.height);
     return (shortest * edgeWidthFraction).clamp(minEdgeWidth, maxEdgeWidth);

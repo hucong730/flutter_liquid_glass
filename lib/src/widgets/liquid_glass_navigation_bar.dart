@@ -22,6 +22,8 @@ class LiquidGlassNavigationBar extends StatelessWidget {
     this.selectedItemBackground = const Color(0x2EFFFFFF),
     this.itemPadding =
         const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    this.refractiveIndex,
+    this.chromaticAberration,
   });
 
   /// Item widgets, typically icons or icon+label columns.
@@ -46,6 +48,8 @@ class LiquidGlassNavigationBar extends StatelessWidget {
 
   /// Padding inside each item.
   final EdgeInsetsGeometry itemPadding;
+  final double? refractiveIndex;
+  final double? chromaticAberration;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,8 @@ class LiquidGlassNavigationBar extends StatelessWidget {
       highlightIntensity: highlightIntensity,
       blurSigma: blurSigma,
       quality: quality,
+      refractiveIndex: refractiveIndex ?? 1.5,
+      chromaticAberration: chromaticAberration ?? 0.15,
       child: SizedBox(
         height: height - 12,
         child: Row(

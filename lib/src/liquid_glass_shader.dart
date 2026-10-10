@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'liquid_glass_geometry.dart';
+
 /// Loads and caches the liquid glass [FragmentProgram] and binds uniforms.
 ///
 /// This is the only module that touches the `FragmentShader` API, so the
@@ -7,6 +9,11 @@ import 'dart:ui';
 abstract final class LiquidGlassShader {
   static FragmentProgram? _program;
   static Future<FragmentProgram?>? _loading;
+
+  /// Total number of float uniforms in shaders/liquid_glass.frag.
+  static const int floatUniformCount = 20;
+
+  static const Offset defaultLightDirection = Offset(-0.4472, -0.7154);
 
   /// Loads the program once and caches it globally.
   ///
@@ -32,6 +39,18 @@ abstract final class LiquidGlassShader {
   /// (mutating floats on a retained shader instead of recreating it).
   static FragmentShader? createShader() => _program?.fragmentShader();
 
+  /// Computes the uFlags bitfield (bit0 refraction, bit1 highlight,
+  /// bit2 chromatic aberration).
+  static double flags({
+    required bool refractionEnabled,
+    required bool highlightEnabled,
+    required bool chromaticAberrationEnabled,
+  }) {
+    return (refractionEnabled ? 1 : 0).toDouble() +
+        (highlightEnabled ? 2 : 0).toDouble() +
+        (chromaticAberrationEnabled ? 4 : 0).toDouble();
+  }
+
   /// Binds all float uniforms in shader declaration order.
   static void bind(
     FragmentShader shader, {
@@ -42,6 +61,10 @@ abstract final class LiquidGlassShader {
     required Color tint,
     required bool refractionEnabled,
     required bool highlightEnabled,
+    bool chromaticAberrationEnabled = false,
+    double refractiveIndex = 1.5,
+    double chromaticAberration = 0.15,
+    Offset lightDirection = defaultLightDirection,
     Offset? touchPoint,
     double pressAmount = 0,
     Offset dragVelocity = Offset.zero,
@@ -61,9 +84,14 @@ abstract final class LiquidGlassShader {
     shader.setFloat(i++, tint.g);
     shader.setFloat(i++, tint.b);
     shader.setFloat(i++, tint.a);
-    // uFlags (bit0 refraction, bit1 highlight)
-    shader.setFloat(i++,
-        (refractionEnabled ? 1 : 0).toDouble() + (highlightEnabled ? 2 : 0).toDouble());
+    // uFlags (bit0 refraction, bit1 highlight, bit2 chromatic aberration)
+    shader.setFloat(
+        i++,
+        flags(
+          refractionEnabled: refractionEnabled,
+          highlightEnabled: highlightEnabled,
+          chromaticAberrationEnabled: chromaticAberrationEnabled,
+        ));
     // uTouchPoint
     shader.setFloat(i++, touchPoint?.dx ?? 0);
     shader.setFloat(i++, touchPoint?.dy ?? 0);
@@ -72,5 +100,15 @@ abstract final class LiquidGlassShader {
     // uDragVelocity
     shader.setFloat(i++, dragVelocity.dx);
     shader.setFloat(i++, dragVelocity.dy);
+    // uThickness — the bevel band width doubles as the hemisphere thickness.
+    shader.setFloat(i++, LiquidGlassGeometry.edgeWidth(size));
+    // uRefractiveIndex
+    shader.setFloat(i++, refractiveIndex);
+    // uChromaticAberration
+    shader.setFloat(i++, chromaticAberration);
+    // uLightDirection
+    shader.setFloat(i++, lightDirection.dx);
+    shader.setFloat(i++, lightDirection.dy);
+    assert(i == floatUniformCount);
   }
 }

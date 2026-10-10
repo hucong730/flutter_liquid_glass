@@ -25,6 +25,9 @@ class LiquidGlass extends StatefulWidget {
     this.quality = LiquidGlassQuality.high,
     this.padding,
     this.onTap,
+    this.refractiveIndex = 1.5,
+    this.chromaticAberration = 0.15,
+    this.lightDirection = const Offset(-0.4472, -0.7154),
   });
 
   final Widget child;
@@ -58,6 +61,16 @@ class LiquidGlass extends StatefulWidget {
 
   /// Tap callback.
   final VoidCallback? onTap;
+
+  /// Index of refraction of the simulated glass (1.5 ≈ real glass).
+  final double refractiveIndex;
+
+  /// RGB channel split along the refraction displacement. Applied on the
+  /// high quality tier only; 0 disables.
+  final double chromaticAberration;
+
+  /// 2D direction the edge light comes from (normalized in the shader).
+  final Offset lightDirection;
 
   @override
   State<LiquidGlass> createState() => _LiquidGlassState();
@@ -160,6 +173,13 @@ class _LiquidGlassState extends State<LiquidGlass> {
               tint: widget.tint,
               refractionEnabled: refractionStrength > 0,
               highlightEnabled: highlightIntensity > 0,
+              chromaticAberrationEnabled:
+                  widget.quality == LiquidGlassQuality.high &&
+                      refractionStrength > 0 &&
+                      widget.chromaticAberration > 0,
+              refractiveIndex: widget.refractiveIndex,
+              chromaticAberration: widget.chromaticAberration,
+              lightDirection: widget.lightDirection,
               touchPoint: controller.touchPoint,
               pressAmount: controller.pressAmount,
               dragVelocity: controller.dragVelocity,

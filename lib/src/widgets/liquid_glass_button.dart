@@ -18,6 +18,8 @@ class LiquidGlassButton extends StatelessWidget {
     this.blurSigma,
     this.quality = LiquidGlassQuality.high,
     this.controller,
+    this.refractiveIndex,
+    this.chromaticAberration,
   });
 
   final Widget child;
@@ -29,6 +31,8 @@ class LiquidGlassButton extends StatelessWidget {
   final double? blurSigma;
   final LiquidGlassQuality quality;
   final LiquidGlassController? controller;
+  final double? refractiveIndex;
+  final double? chromaticAberration;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +47,8 @@ class LiquidGlassButton extends StatelessWidget {
       blurSigma: blurSigma,
       quality: quality,
       controller: controller,
+      refractiveIndex: refractiveIndex ?? 1.5,
+      chromaticAberration: chromaticAberration ?? 0.15,
       child: child,
     );
   }
