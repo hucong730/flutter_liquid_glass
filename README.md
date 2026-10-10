@@ -1,23 +1,29 @@
-# liquid_glass
+# liquid_glass_fx
 
-一个纯 Dart 的 Flutter package，用 `FragmentShader`（GLSL，经 Impeller 编译）+
-双层 `BackdropFilter` 实现接近 iOS 26 Liquid Glass 的液态玻璃效果：折射透镜、
-菲涅尔边缘高光、背景模糊，以及按压凹陷 / 拖拽黏滞形变 / 弹簧回弹交互。
+A pure-Dart Flutter package that renders iOS 26-style **liquid glass** using a
+`FragmentShader` (GLSL, compiled by Impeller) and a dual-`BackdropFilter`
+pipeline: refraction lensing, edge highlights, background blur, plus
+press/drag deformation with spring-back.
 
-默认视觉风格为「清透型」：折射透镜感强、轻模糊、边缘高光。
+The default visual style is "clear glass": strong lens refraction, light blur,
+and a bright directional edge rim.
 
-## 渲染管线
+## Rendering pipeline
 
-圆角裁剪（`ClipRRect`）内嵌套两层 backdrop filter：
+Inside a rounded-rect clip, two backdrop filters are nested:
 
-1. 内层 `BackdropFilter(ImageFilter.blur)`：背景模糊交给引擎（Impeller 降采样优化）。
-2. 外层 `BackdropFilter(ImageFilter.shader)`：采样到的背景即内层模糊后的结果，
-   负责折射 UV 扰动、边缘高光、色调/饱和叠加与按压/拖拽形变。
+1. Inner `BackdropFilter(ImageFilter.blur)` — background blur handled by the
+   engine (Impeller's downsample-optimized blur).
+2. Outer `BackdropFilter(ImageFilter.shader)` — samples the already-blurred
+   backdrop and applies refraction UV displacement (hemisphere bevel height
+   field, true 3D normals, Snell refraction with light-path length), RGB
+   chromatic dispersion, edge highlights (meniscus shading + directional rim),
+   luminance-preserving tint, and press/drag deformation.
 
-## 用法
+## Usage
 
 ```dart
-import 'package:liquid_glass/liquid_glass.dart';
+import 'package:liquid_glass_fx/liquid_glass_fx.dart';
 
 LiquidGlass(
   borderRadius: 20,
@@ -36,23 +42,30 @@ LiquidGlassNavigationBar(
 )
 ```
 
-## 质量档与降级建议
+Interactive deformation (press dimple, touch-aligned edge glint, drag
+stretch) is enabled by default on `LiquidGlass` / `LiquidGlassButton`.
+Use `LiquidGlassController` to drive it externally or link multiple surfaces.
 
-`LiquidGlassQuality` 只做乘性降级；显式传入的参数优先于质量档默认值。
+## Quality tiers
 
-| 档位 | blur sigma | 折射 | 高光 | 形变 |
-|---|---|---|---|---|
-| high | ×1.0 | 全开 | 全开 | 开 |
-| medium | ×0.7 | 弱（×0.5） | 简化（×0.5） | 开 |
-| low | ×0.5 | 关 | 关 | 关（shader 仅 tint，近似一次纹理采样） |
+`LiquidGlassQuality` applies multiplicative downgrades only; explicitly passed
+parameters always win over tier defaults.
 
-建议：旗舰设备用 high；中端 Android 用 medium；低端 Android 或大面积
-（接近全屏）玻璃 + 高 blur sigma 的场景用 low。
+| Tier | blur sigma | refraction | highlight | dispersion | deformation |
+|---|---|---|---|---|---|
+| high | ×1.0 | full | full | on | on |
+| medium | ×0.7 | weak (×0.5) | simplified (×0.5) | off | on |
+| low | ×0.5 | off | off | off | off (shader does tint only, ~1 texture fetch) |
 
-## 已知限制
+Recommended: `high` on flagship devices, `medium` on mid-range Android, `low`
+for low-end Android or very large (near-fullscreen) glass with high blur sigma.
 
-- 依赖 Impeller 的 runtime effect 编译；Skia（如部分旧 Android / Web）下
-  shader 可能无法编译，此时自动退化为仅 blur。
-- 大面积全屏玻璃 + 高 blur sigma 在低端 Android 上有压力，请使用 low 档。
-- golden test 环境不运行真实 Impeller shader，shader 视觉效果请用
-  `example/` App 人工验证。
+## Known limitations
+
+- Requires Impeller runtime-effect compilation. On Skia fallback targets
+  (some old Android devices, web) the shader may fail to compile; the widget
+  then degrades gracefully to blur only.
+- Large fullscreen glass + high blur sigma is expensive on low-end Android —
+  use the `low` tier.
+- Golden tests do not run real Impeller shaders; verify visuals on device
+  with the `example/` app.

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass/liquid_glass.dart';
+import 'package:liquid_glass_fx/liquid_glass_fx.dart';
 
 void main() {
   group('state machine (no ticking required)', () {

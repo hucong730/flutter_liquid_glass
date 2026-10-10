@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass/liquid_glass.dart';
+import 'package:liquid_glass_fx/liquid_glass_fx.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(

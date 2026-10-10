@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass/src/liquid_glass_shader.dart';
+import 'package:liquid_glass_fx/src/liquid_glass_shader.dart';
 
 void main() {
   test('shader program loads and binds without error', () async {

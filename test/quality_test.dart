@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass/src/quality.dart';
+import 'package:liquid_glass_fx/src/quality.dart';
 
 void main() {
   group('LiquidGlassQuality scales', () {

@@ -16,7 +16,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liquid_glass/src/liquid_glass_shader.dart';
+import 'package:liquid_glass_fx/src/liquid_glass_shader.dart';
 
 // Logical scene is 800x600 rendered at 2x -> 1600x1200 physical pixels.
 // All coordinates below are physical (logical * kScale).
