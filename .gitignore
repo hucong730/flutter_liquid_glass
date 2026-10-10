@@ -1,3 +1,4 @@
 .superpowers/
 .dart_tool/
 build/
+.idea/
