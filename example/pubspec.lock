@@ -62,6 +62,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_lru_cache:
+    dependency: "direct main"
+    description:
+      name: flutter_lru_cache
+      sha256: daa375a194a11095078107ca58940258c8b1f434eaf00c29a826db6724f592e1
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -102,9 +110,10 @@ packages:
   liquid_glass_fx:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
+      name: liquid_glass_fx
+      sha256: e638270b464e54740539f9f5e87dcd7affbaf5c877bc69c9da9435a6eda57c83
+      url: "https://pub.dev"
+    source: hosted
     version: "0.0.1"
   matcher:
     dependency: transitive

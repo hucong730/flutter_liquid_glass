@@ -10,8 +10,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  liquid_glass_fx:
-    path: ../
+  liquid_glass_fx: ^0.0.1
+  flutter_lru_cache: ^1.0.3
+
+#  liquid_glass_fx:
+#    path: ../
 
 dev_dependencies:
   flutter_test:
